@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tugas_1_tpm/screens/jumlah_total_screen.dart';
-import 'package:tugas_1_tpm/screens/piramid_screen.dart';
-import 'package:tugas_1_tpm/screens/stopwatch_screen.dart';
 import '../models/user_model.dart';
+import 'calc_screen.dart';
+import 'props_screen.dart';
+import 'jumlah_total_screen.dart';
+import 'piramid_screen.dart';
+import 'stopwatch_screen.dart';
 import 'kelompok_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
@@ -13,18 +15,19 @@ class MainMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final menuItems = _getMenuItems();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text(
           'Menu Utama',
           style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600, 
+            fontWeight: FontWeight.w600,
             fontSize: 20,
             color: Colors.white,
           ),
         ),
-
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -38,14 +41,13 @@ class MainMenuScreen extends StatelessWidget {
             ),
           ),
         ),
-        backgroundColor: Colors.transparent, // Transparan agar gradient terlihat
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         foregroundColor: Colors.white,
       ),
       body: Column(
         children: [
-          // Header dengan profile dan logout button di samping
           Container(
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.all(24),
@@ -65,7 +67,7 @@ class MainMenuScreen extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.shade200.withValues(alpha: 0.5),
+                  color: Colors.blue.shade200.withOpacity(0.5),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -73,7 +75,6 @@ class MainMenuScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Profile section
                 Stack(
                   children: [
                     Container(
@@ -84,7 +85,7 @@ class MainMenuScreen extends StatelessWidget {
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -115,15 +116,13 @@ class MainMenuScreen extends StatelessWidget {
                         child: const Icon(
                           Icons.check,
                           color: Colors.white,
-                          size: 12,
+                          size: 14,
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(width: 16),
-                
-                // Welcome text
+                const SizedBox(width: 18),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,19 +131,19 @@ class MainMenuScreen extends StatelessWidget {
                         'Selamat datang kembali!',
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          letterSpacing: 0.5,
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user.name,
                         style: GoogleFonts.poppins(
-                          fontSize: 22,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 0.5,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Container(
@@ -153,7 +152,7 @@ class MainMenuScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -168,14 +167,12 @@ class MainMenuScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                
-                // Logout Button di samping profile
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.white.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
+                      color: Colors.white.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
@@ -185,17 +182,13 @@ class MainMenuScreen extends StatelessWidget {
                       color: Colors.white,
                       size: 24,
                     ),
-                    onPressed: () {
-                      _showLogoutDialog(context);
-                    },
+                    onPressed: () => _showLogoutDialog(context),
                     tooltip: 'Logout',
                   ),
                 ),
               ],
             ),
           ),
-
-          // Menu Section Title
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -210,7 +203,7 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${_getMenuItems().length} Menu',
+                  '${menuItems.length} Menu',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.grey.shade500,
@@ -220,15 +213,14 @@ class MainMenuScreen extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 12),
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _getMenuItems().length,
+              itemCount: menuItems.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                final menu = _getMenuItems()[index];
+                final menu = menuItems[index];
                 return _buildModernMenuCard(context, menu);
               },
             ),
@@ -250,13 +242,31 @@ class MainMenuScreen extends StatelessWidget {
         'stats': '4 Anggota',
       },
       {
-        'title': 'Jumlah Total Angka',
-        'subtitle': 'Penjumlahan angka dalam satu field',
+        'title': 'Kalkulator',
+        'subtitle': 'Operasi penjumlahan dan pengurangan',
         'icon': Icons.calculate_rounded,
+        'color': Colors.deepPurple,
+        'gradient': [Colors.deepPurple.shade400, Colors.deepPurple.shade600],
+        'route': const CalcScreen(),
+        'stats': '+  -  =',
+      },
+      {
+        'title': 'Cek Bilangan',
+        'subtitle': 'Ganjil, genap, dan bilangan prima',
+        'icon': Icons.pin_outlined,
+        'color': Colors.blue,
+        'gradient': [Colors.blue.shade400, Colors.blue.shade600],
+        'route': const PropsScreen(),
+        'stats': 'Prima',
+      },
+      {
+        'title': 'Jumlah Total Angka',
+        'subtitle': 'Penjumlahan angka dengan field dinamis',
+        'icon': Icons.functions_rounded,
         'color': Colors.red,
         'gradient': [Colors.red.shade400, Colors.red.shade600],
         'route': const JumlahTotalScreen(),
-        'stats': 'Kalkulator',
+        'stats': 'Dinamis',
       },
       {
         'title': 'Stopwatch',
@@ -279,13 +289,16 @@ class MainMenuScreen extends StatelessWidget {
     ];
   }
 
-  Widget _buildModernMenuCard(BuildContext context, Map<String, dynamic> menu) {
+  Widget _buildModernMenuCard(
+    BuildContext context,
+    Map<String, dynamic> menu,
+  ) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: (menu['color'] as Color).withValues(alpha: 0.15),
+            color: (menu['color'] as Color).withOpacity(0.15),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -306,7 +319,6 @@ class MainMenuScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Icon dengan gradient background
                 Container(
                   width: 60,
                   height: 60,
@@ -325,8 +337,6 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                // Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,16 +358,13 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      // Stats chip
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: (menu['color'] as Color).withValues(
-                            alpha: 0.1,
-                          ),
+                          color: (menu['color'] as Color).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -372,8 +379,6 @@ class MainMenuScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Arrow icon
                 Container(
                   width: 40,
                   height: 40,
@@ -383,7 +388,7 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.arrow_forward_ios_rounded,
-                    color: (menu['color'] as Color).withValues(alpha: 0.5),
+                    color: (menu['color'] as Color).withOpacity(0.5),
                     size: 18,
                   ),
                 ),
@@ -409,7 +414,7 @@ class MainMenuScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.shade100.withValues(alpha: 0.5),
+                color: Colors.red.shade100.withOpacity(0.5),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -488,7 +493,9 @@ class MainMenuScreen extends StatelessWidget {
                       ),
                       child: Text(
                         'Logout',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
