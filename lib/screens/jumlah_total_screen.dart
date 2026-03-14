@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'ui_helpers.dart';
 
 class JumlahTotalScreen extends StatefulWidget {
   const JumlahTotalScreen({super.key});
@@ -9,361 +9,253 @@ class JumlahTotalScreen extends StatefulWidget {
 }
 
 class _JumlahTotalScreenState extends State<JumlahTotalScreen> {
-  final TextEditingController _inputController = TextEditingController();
-  String _result = '';
-  List<double> _numbers = [];
-  String _errorMessage = '';
+  final List<int> numbers = [];
+  String currentInput = '';
 
-  void _calculateSum() {
+  int get total => numbers.fold(0, (sum, item) => sum + item);
+
+  void onKeyTap(String value) {
     setState(() {
-      _errorMessage = '';
-      _numbers = [];
-      
-      String input = _inputController.text.trim();
-      
-      if (input.isEmpty) {
-        _errorMessage = 'Masukkan angka terlebih dahulu';
-        _result = '';
-        return;
-      }
-
-      // Split input berdasarkan koma atau spasi
-      List<String> parts = input.split(RegExp(r'[,\s]+'));
-      
-      double total = 0;
-      List<double> validNumbers = [];
-
-      for (String part in parts) {
-        if (part.isNotEmpty) {
-          try {
-            // Ganti koma dengan titik untuk desimal
-            String cleanedPart = part.replaceAll(',', '.');
-            double number = double.parse(cleanedPart);
-            validNumbers.add(number);
-            total += number;
-          } catch (e) {
-            _errorMessage = 'Format angka tidak valid: "$part"';
-            _result = '';
-            return;
-          }
+      if (value == 'C') {
+        currentInput = '';
+      } else if (value == '<') {
+        if (currentInput.isNotEmpty) {
+          currentInput = currentInput.substring(0, currentInput.length - 1);
         }
-      }
-
-      if (validNumbers.isEmpty) {
-        _errorMessage = 'Tidak ada angka yang valid untuk dijumlahkan';
-        _result = '';
-        return;
-      }
-
-      _numbers = validNumbers;
-      
-      // Format hasil dengan 2 desimal jika ada angka desimal
-      bool hasDecimal = _numbers.any((n) => n != n.roundToDouble());
-      if (hasDecimal) {
-        _result = total.toStringAsFixed(2);
       } else {
-        _result = total.toInt().toString();
+        if (currentInput == '0') {
+          currentInput = value;
+        } else {
+          currentInput += value;
+        }
       }
     });
   }
 
-  void _clearInput() {
+  void addNumber() {
+    if (currentInput.isEmpty) return;
+
     setState(() {
-      _inputController.clear();
-      _result = '';
-      _numbers = [];
-      _errorMessage = '';
+      numbers.add(int.tryParse(currentInput) ?? 0);
+      currentInput = '';
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    const labels = [
+      '7', '8', '9', '<',
+      '4', '5', '6', 'C',
+      '1', '2', '3', '0',
+    ];
+
     return Scaffold(
+      backgroundColor: AppColors.outerBg,
       appBar: AppBar(
         title: const Text('Jumlah Total Angka'),
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.purpleDark,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.red.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Input Card
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+      body: SafeArea(
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 430),
+            margin: const EdgeInsets.all(18),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+            decoration: BoxDecoration(
+              color: AppColors.appBg,
+              borderRadius: BorderRadius.circular(34),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Masukkan Angka',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Pisahkan dengan koma (,) atau spasi',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _inputController,
-                        decoration: InputDecoration(
-                          hintText: 'Contoh: 10, 20, 30 atau 10 20 30',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: Colors.red.shade400,
-                              width: 2,
-                            ),
-                          ),
-                          prefixIcon: const Icon(Icons.numbers),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: _clearInput,
-                          ),
-                        ),
-                        keyboardType: TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _calculateSum,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16,horizontal: 24),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Hitung Total',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+              ],
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 6),
+                const Text(
+                  'AKUMULASI TOTAL',
+                  style: TextStyle(
+                    color: AppColors.titleGrey,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 2,
                   ),
                 ),
-              ),
-              
-              const SizedBox(height: 20),
-              
-              // Error Message
-              if (_errorMessage.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red.shade700,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _errorMessage,
-                          style: GoogleFonts.poppins(
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              
-              // Result Card
-              if (_result.isNotEmpty)
-                Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                const SizedBox(height: 18),
+
+                // Panel daftar angka
+                Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.red.shade600,
-                          Colors.red.shade400,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                      color: const Color(0xFFF1F1F4),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: AppColors.panelBorder),
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          'Total Penjumlahan',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _result,
-                          style: GoogleFonts.poppins(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              
-              const SizedBox(height: 20),
-              
-              // Detail Numbers
-              if (_numbers.isNotEmpty)
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Detail Angka:',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _numbers.asMap().entries.map((entry) {
-                            int index = entry.key;
-                            double number = entry.value;
-                            bool isLast = index == _numbers.length - 1;
-                            
-                            return Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.red.shade200,
-                                    ),
-                                  ),
+                        Expanded(
+                          child: numbers.isEmpty
+                              ? const Center(
                                   child: Text(
-                                    number == number.roundToDouble()
-                                        ? number.toInt().toString()
-                                        : number.toString(),
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.red.shade700,
+                                    'Belum ada angka ditambahkan',
+                                    style: TextStyle(
+                                      color: AppColors.titleGrey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
                                     ),
+                                  ),
+                                )
+                              : Scrollbar(
+                                  thumbVisibility: true,
+                                  radius: const Radius.circular(12),
+                                  child: ListView.separated(
+                                    itemCount: numbers.length,
+                                    separatorBuilder: (_, __) => Divider(
+                                      color: Colors.grey.shade300,
+                                      height: 1,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              'ANGKA ${index + 1}',
+                                              style: const TextStyle(
+                                                color: AppColors.titleGrey,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            const Spacer(),
+                                            Text(
+                                              numbers[index].toString(),
+                                              style: const TextStyle(
+                                                color: AppColors.textDark,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
-                                if (!isLast)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: Icon(
-                                      Icons.add,
-                                      size: 16,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                              ],
-                            );
-                          }).toList(),
                         ),
-                        if (_numbers.length > 1)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Jumlah Angka:',
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.red.shade700,
-                                    ),
-                                  ),
-                                  Text(
-                                    _numbers.length.toString(),
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.red.shade700,
-                                    ),
-                                  ),
-                                ],
+                        const SizedBox(height: 12),
+                        Divider(
+                          color: Colors.grey.shade400,
+                          thickness: 1.2,
+                          height: 1,
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            const Text(
+                              'TOTAL',
+                              style: TextStyle(
+                                color: Color(0xFF5C63F2),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                          ),
+                            const Spacer(),
+                            Text(
+                              total.toString(),
+                              style: const TextStyle(
+                                color: Color(0xFF5C63F2),
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 ),
-            ],
+
+                const SizedBox(height: 14),
+
+                // Input + tombol tambah
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 58,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFF5C63F2),
+                            width: 2,
+                          ),
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          currentInput.isEmpty ? '0' : currentInput,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 58,
+                      width: 132,
+                      child: ElevatedButton(
+                        onPressed: addNumber,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.purpleDark,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'TAMBAH',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // Keypad
+                NumberPad(
+                  labels: labels,
+                  onTap: onKeyTap,
+                  childAspectRatio: 1.18,
+                  iconMap: const {
+                    '<': Icons.backspace_outlined,
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
-  }
-  
-  @override
-  void dispose() {
-    _inputController.dispose();
-    super.dispose();
   }
 }
