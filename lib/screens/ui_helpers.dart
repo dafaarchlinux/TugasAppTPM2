@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   static const outerBg = Color(0xFFDCDCDC);
@@ -19,10 +20,21 @@ class AppColors {
 }
 
 Color keypadColor(String label) {
-  if (['7', '8', '9', '-'].contains(label)) return AppColors.purpleDark;
-  if (['4', '5', '6', '+'].contains(label)) return AppColors.purpleMid;
-  if (['1', '2', '3', '='].contains(label)) return AppColors.purpleLight;
+  if (['÷', '×', '-', '+'].contains(label)) return AppColors.purpleDark;
+  if (['7', '8', '9'].contains(label)) return const Color(0xFF5F67F2);
+  if (['4', '5', '6'].contains(label)) return const Color(0xFF7C89F2);
+  if (['1', '2', '3', '='].contains(label)) return const Color(0xFFB8B0EA);
   return AppColors.pinkLight;
+}
+
+bool isLightTextButton(String label) {
+  return ['÷', '×', '-', '+', '7', '8', '9', '4', '5', '6'].contains(label);
+}
+
+double calcButtonFontSize(String label) {
+  if (['÷', '×', '-', '+', '=', '%', '±'].contains(label)) return 24;
+  if (label == '.') return 28;
+  return 22;
 }
 
 class PageTitle extends StatelessWidget {
@@ -36,11 +48,11 @@ class PageTitle extends StatelessWidget {
       padding: const EdgeInsets.only(top: 26, bottom: 16),
       child: Text(
         text,
-        style: const TextStyle(
+        style: GoogleFonts.poppins(
           color: AppColors.titleGrey,
           fontSize: 18,
           fontWeight: FontWeight.w800,
-          letterSpacing: 2,
+          letterSpacing: 1.2,
         ),
       ),
     );
@@ -88,7 +100,7 @@ class CalcButton extends StatelessWidget {
   final VoidCallback onTap;
   final double height;
   final Color? color;
-  final double fontSize;
+  final double? fontSize;
   final IconData? icon;
 
   const CalcButton({
@@ -97,52 +109,56 @@ class CalcButton extends StatelessWidget {
     required this.onTap,
     this.height = 58,
     this.color,
-    this.fontSize = 18,
+    this.fontSize,
     this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
     final bg = color ?? keypadColor(label);
+    final textColor =
+        isLightTextButton(label) ? Colors.white : AppColors.textDark;
+    final resolvedFontSize = fontSize ?? calcButtonFontSize(label);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: bg.withOpacity(0.18),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: icon != null
-              ? Icon(icon, color: AppColors.textDark, size: 22)
-              : FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: label == '7' ||
-                              label == '8' ||
-                              label == '9' ||
-                              label == '-' ||
-                              label == '4' ||
-                              label == '5' ||
-                              label == '6' ||
-                              label == '+'
-                          ? Colors.white
-                          : AppColors.textDark,
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w800,
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: bg.withValues(alpha: 0.18),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: icon != null
+                  ? Icon(icon, color: AppColors.textDark, size: 22)
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: textColor,
+                          fontSize: resolvedFontSize,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+            ),
+          ),
         ),
       ),
     );
