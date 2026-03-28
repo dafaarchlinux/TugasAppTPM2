@@ -7,6 +7,9 @@ import 'jumlah_total_screen.dart';
 import 'piramid_screen.dart';
 import 'stopwatch_screen.dart';
 import 'kelompok_screen.dart';
+import 'hari_weton_screen.dart';
+import 'hitung_umur_screen.dart';
+import 'konversi_hijriah_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
   final User user;
@@ -285,6 +288,33 @@ class MainMenuScreen extends StatelessWidget {
         'gradient': [Colors.indigo.shade400, Colors.indigo.shade600],
         'route': const PiramidScreen(),
         'stats': '3D Calculator',
+      },
+      {
+        'title': 'Hari & Weton',
+        'subtitle': 'Konversi tanggal ke hari dan weton Jawa',
+        'icon': Icons.calendar_month_rounded,
+        'color': Colors.cyan,
+        'gradient': [Colors.cyan.shade400, Colors.blue.shade600],
+        'route': const HariWetonScreen(),
+        'stats': 'Hari Jawa',
+      },
+      {
+        'title': 'Hitung Umur',
+        'subtitle': 'Usia detail dari tanggal lahir sampai hari ini',
+        'icon': Icons.cake_rounded,
+        'color': Colors.green,
+        'gradient': [Colors.green.shade400, Colors.teal.shade600],
+        'route': const HitungUmurScreen(),
+        'stats': 'Tahun Bulan Hari',
+      },
+      {
+        'title': 'Konversi Hijriah',
+        'subtitle': 'Ubah tanggal Masehi menjadi kalender Hijriah',
+        'icon': Icons.mosque_rounded,
+        'color': Colors.deepPurple,
+        'gradient': [Colors.deepPurple.shade400, Colors.indigo.shade600],
+        'route': const KonversiHijriahScreen(),
+        'stats': 'Hijriah',
       },
     ];
   }
