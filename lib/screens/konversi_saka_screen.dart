@@ -2,24 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'date_input_card.dart';
 import 'big_calendar_utils.dart';
+import 'big_saka_utils.dart';
 
-class HariWetonScreen extends StatefulWidget {
-  const HariWetonScreen({super.key});
+class KonversiSakaScreen extends StatefulWidget {
+  const KonversiSakaScreen({super.key});
 
   @override
-  State<HariWetonScreen> createState() => _HariWetonScreenState();
+  State<KonversiSakaScreen> createState() => _KonversiSakaScreenState();
 }
 
-class _HariWetonScreenState extends State<HariWetonScreen> {
+class _KonversiSakaScreenState extends State<KonversiSakaScreen> {
   BigDate? _manualDate;
   DateTime? _pickedDate;
-  String? _dayName;
-  String? _wetonName;
-  String? _formattedDate;
-  String? _shortDate;
-  String? _note;
-  String? _dayIndexInfo;
-  String? _pasaranIndexInfo;
+  Map<String, dynamic>? _sakaInfo;
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -34,18 +29,17 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
       helpText: 'Pilih tanggal',
       cancelText: 'Batal',
       confirmText: 'Pilih',
-      fieldHintText: 'dd/mm/yyyy',
       locale: const Locale('id', 'ID'),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              primary: Colors.blue.shade700,
+              seedColor: Colors.orange,
+              primary: Colors.orange.shade700,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: Colors.blue.shade700,
+                foregroundColor: Colors.orange.shade700,
                 textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
               ),
             ),
@@ -57,7 +51,7 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
 
     if (pickedDate == null) return;
 
-    _calculateBigDate(
+    _convertDate(
       BigDate(
         year: BigInt.from(pickedDate.year),
         month: pickedDate.month,
@@ -75,87 +69,41 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
     );
 
     if (!BigCalendarUtils.isValidDate(bigDate)) {
-      _showError('Kombinasi tanggal, bulan, dan tahun tidak valid.');
+      _showError('Tanggal Masehi yang dimasukkan tidak valid.');
       return;
     }
 
-    _calculateBigDate(bigDate);
+    _convertDate(bigDate);
   }
 
-  void _calculateBigDate(BigDate bigDate, {DateTime? pickedDateForDisplay}) {
-    final dayName = BigCalendarUtils.dayOfWeek(bigDate);
-    final wetonName = BigCalendarUtils.weton(bigDate);
-    final totalNeptu = BigCalendarUtils.totalNeptu(bigDate);
+  void _convertDate(BigDate bigDate, {DateTime? pickedDateForDisplay}) {
+    try {
+      final sakaInfo = BigSakaUtils.getFullSakaInfo(bigDate);
+      final isLeap = BigSakaUtils.isLeapYear(sakaInfo['year']);
+      final daysInMonth = BigSakaUtils.getDaysInMonth(
+        sakaInfo['month'], 
+        sakaInfo['year'],
+      );
 
-    final dayIdx = BigCalendarUtils.dayNames.indexOf(dayName);
-    final wetonIdx = BigCalendarUtils.wetonNames.indexOf(wetonName);
-
-    setState(() {
-      _manualDate = bigDate;
-      _pickedDate = pickedDateForDisplay;
-      _dayName = dayName;
-      _wetonName = wetonName;
-      _formattedDate =
-          '$dayName, ${bigDate.day.toString().padLeft(2, '0')} ${_monthName(bigDate.month)} ${bigDate.year}';
-      _shortDate =
-          '${bigDate.day.toString().padLeft(2, '0')} ${_monthShortName(bigDate.month)} ${bigDate.year}';
-      _dayIndexInfo = 'Neptu hari: ${BigCalendarUtils.dayNeptu[dayIdx]}';
-      _pasaranIndexInfo =
-          'Neptu pasaran: ${BigCalendarUtils.wetonNeptu[wetonIdx]} • Total neptu: $totalNeptu';
-      _note =
-          'Input manual mendukung tahun 1 sampai angka sangat besar. Tombol kalender dipakai hanya untuk tahun normal.';
-    });
-  }
-
-  String _monthName(int month) {
-    const months = [
-      '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return months[month];
-  }
-
-  String _monthShortName(int month) {
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return months[month];
+      setState(() {
+        _manualDate = bigDate;
+        _pickedDate = pickedDateForDisplay;
+        _sakaInfo = {
+          ...sakaInfo,
+          'isLeap': isLeap,
+          'daysInMonth': daysInMonth,
+        };
+      });
+    } catch (e) {
+      _showError('Terjadi kendala saat mengonversi tanggal ke Saka.');
+    }
   }
 
   void _clearResult() {
     setState(() {
       _manualDate = null;
       _pickedDate = null;
-      _dayName = null;
-      _wetonName = null;
-      _formattedDate = null;
-      _shortDate = null;
-      _note = null;
-      _dayIndexInfo = null;
-      _pasaranIndexInfo = null;
+      _sakaInfo = null;
     });
   }
 
@@ -173,20 +121,13 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasResult =
-        _manualDate != null &&
-        _dayName != null &&
-        _wetonName != null &&
-        _formattedDate != null &&
-        _shortDate != null &&
-        _dayIndexInfo != null &&
-        _pasaranIndexInfo != null;
+    final hasResult = _manualDate != null && _sakaInfo != null;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Text(
-          'Hari & Weton',
+          'Konversi Kalender Saka',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 20,
@@ -199,9 +140,9 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.indigo.shade400,
-                Colors.blue.shade600,
-                Colors.cyan.shade500,
+                Colors.orange.shade400,
+                Colors.orange.shade600,
+                Colors.brown.shade700,
               ],
             ),
           ),
@@ -221,15 +162,15 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.indigo.shade400,
-                  Colors.blue.shade600,
-                  Colors.cyan.shade500,
+                  Colors.orange.shade400,
+                  Colors.orange.shade600,
+                  Colors.brown.shade700,
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.shade100.withValues(alpha: 0.7),
+                  color: Colors.orange.shade100.withOpacity(0.7),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -239,13 +180,13 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  Icons.calendar_month_rounded,
-                  color: Colors.white.withValues(alpha: 0.95),
+                  Icons.park_rounded,
+                  color: Colors.white.withOpacity(0.95),
                   size: 34,
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Cek Hari & Weton',
+                  'Konversi Masehi ke Saka',
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -254,11 +195,11 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Masukkan tanggal secara manual untuk tahun berapa pun, atau gunakan kalender untuk tahun normal.',
+                  'Kalender Saka digunakan di Bali dan India. Tahun Saka dimulai pada tahun 78 Masehi.',
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
                     height: 1.5,
-                    color: Colors.white.withValues(alpha: 0.92),
+                    color: Colors.white.withOpacity(0.92),
                   ),
                 ),
                 if (hasResult) ...[
@@ -275,13 +216,13 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.18),
+                        backgroundColor: Colors.white.withOpacity(0.18),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                           side: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: Colors.white.withOpacity(0.25),
                           ),
                         ),
                       ),
@@ -293,17 +234,17 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
           ),
           const SizedBox(height: 20),
           DateInputCard(
-            title: 'Input Tanggal',
+            title: 'Input Tanggal Masehi',
             subtitle:
-                'Isi tanggal, bulan, dan tahun secara bebas. Tahun sangat besar hanya didukung lewat input manual.',
-            color: Colors.blue,
+                'Isi tanggal, bulan, dan tahun secara bebas. Tahun sangat besar didukung lewat input manual.',
+            color: Colors.orange,
             initialDay: _manualDate?.day,
             initialMonth: _manualDate?.month,
             initialYear: _manualDate?.year,
             onSubmit: _submitManualDate,
             onPickDate: _pickDate,
             pickButtonText: 'Buka Kalender',
-            submitButtonText: 'Cek Hari & Weton',
+            submitButtonText: 'Konversi ke Saka',
           ),
           const SizedBox(height: 20),
           Container(
@@ -314,7 +255,7 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
               border: Border.all(color: Colors.grey.shade200),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
+                  color: Colors.black.withOpacity(0.04),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -325,7 +266,7 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hasil Konversi',
+                        'Hasil Konversi Kalender Saka',
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -334,87 +275,71 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                       ),
                       const SizedBox(height: 18),
                       _buildInfoTile(
-                        icon: Icons.event_note_rounded,
-                        title: 'Tanggal Dipilih',
-                        value: _formattedDate!,
+                        icon: Icons.event_available_rounded,
+                        title: 'Tanggal Masehi',
+                        value: _getFormattedMasehi(),
                         color: Colors.blue,
                       ),
                       const SizedBox(height: 14),
                       _buildInfoTile(
                         icon: Icons.today_rounded,
-                        title: 'Hari',
-                        value: _dayName!,
+                        title: 'Hari Masehi',
+                        value: BigCalendarUtils.dayOfWeek(_manualDate!),
                         color: Colors.green,
                       ),
                       const SizedBox(height: 14),
+                      _buildMainResultTile(
+                        icon: Icons.calendar_month_rounded,
+                        title: 'Tanggal Saka',
+                        value: _sakaInfo!['fullDateIndonesian'],
+                        subtitle: 'Tahun ${_sakaInfo!['year']} Saka',
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(height: 14),
                       _buildInfoTile(
-                        icon: Icons.auto_awesome_rounded,
-                        title: 'Weton',
-                        value: _wetonName!,
+                        icon: Icons.wb_sunny,
+                        title: 'Hari Saka',
+                        value:
+                            '${_sakaInfo!['dayName']} (${_sakaInfo!['dayNameIndonesian']})',
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(height: 14),
+                      _buildInfoTile(
+                        icon: Icons.format_list_numbered,
+                        title: 'Bulan Saka',
+                        value:
+                            '${_sakaInfo!['monthName']} (Bulan ke-${_sakaInfo!['month']})',
                         color: Colors.deepPurple,
                       ),
                       const SizedBox(height: 14),
                       _buildInfoTile(
-                        icon: Icons.tag_rounded,
-                        title: 'Informasi Neptu',
-                        value: '$_dayIndexInfo\n$_pasaranIndexInfo',
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 18),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Text(
-                          'Tanggal $_shortDate jatuh pada hari $_dayName dengan weton $_wetonName.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                            height: 1.6,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        icon: Icons.date_range,
+                        title: 'Tahun Saka',
+                        value: _sakaInfo!['year'].toString(),
+                        color: Colors.teal,
                       ),
                       const SizedBox(height: 14),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.amber.shade100),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: Colors.amber.shade800,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                _note!,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade700,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      _buildInfoTile(
+                        icon: Icons.calendar_view_month,
+                        title: 'Jumlah Hari Bulan Ini',
+                        value: '${_sakaInfo!['daysInMonth']} hari',
+                        color: Colors.cyan,
                       ),
+                      const SizedBox(height: 14),
+                      _buildInfoTile(
+                        icon: Icons.info_outline,
+                        title: 'Tahun Kabisat',
+                        value: _sakaInfo!['isLeap'] ? 'Ya' : 'Tidak',
+                        color: Colors.pink,
+                      ),
+                      const SizedBox(height: 18),
+                      _buildInfoCard(),
                     ],
                   )
                 : Column(
                     children: [
                       Icon(
-                        Icons.calendar_view_month_rounded,
+                        Icons.calendar_month_rounded,
                         size: 72,
                         color: Colors.grey.shade300,
                       ),
@@ -429,7 +354,7 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Masukkan tanggal manual untuk tahun berapa pun atau gunakan kalender untuk tahun normal.',
+                        'Masukkan tanggal Masehi untuk dikonversi ke kalender Saka.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 13.5,
@@ -443,6 +368,31 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
         ],
       ),
     );
+  }
+
+  String _getFormattedMasehi() {
+    if (_manualDate == null) return '';
+    final dayName = BigCalendarUtils.dayOfWeek(_manualDate!);
+    return '$dayName, ${_manualDate!.day.toString().padLeft(2, '0')} ${_getMonthName(_manualDate!.month)} ${_manualDate!.year}';
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return months[month];
   }
 
   Widget _buildInfoTile({
@@ -492,6 +442,138 @@ class _HariWetonScreenState extends State<HariWetonScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainResultTile({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String subtitle,
+    required MaterialColor color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.shade100, color.shade50],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: color.shade200,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color.shade700, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: color.shade800,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: color.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: Colors.orange.shade700,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Tentang Kalender Saka',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Kalender Saka adalah kalender yang digunakan di India dan Bali, Indonesia. '
+            'Tahun Saka dimulai pada tahun 78 Masehi. Kalender ini digunakan untuk '
+            'menentukan hari-hari raya Hindu seperti Nyepi, Galungan, dan Kuningan.',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.orange.shade700,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nama hari: Redite (Minggu), Soma (Senin), Anggara (Selasa), Buda (Rabu), '
+            'Wrespati (Kamis), Sukra (Jumat), Saniscara (Sabtu)',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.orange.shade600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Nama bulan: Caitra, Waisaka, Jyaistha, Asadha, Srawana, Bhadrawada, '
+            'Asuji, Kartika, Margasira, Posya, Magha, Phalguna',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: Colors.orange.shade600,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
